@@ -6,16 +6,18 @@ const { Product, Category, Tag, ProductTag } = require('../../models');
 
 // get all products
 router.get('/', (req, res) => {
-	Product.findAll().then(response=> {res.json(response)});
+	Product.findAll().then(response => { res.json(response) });
 });
 
 // get one product
 router.get('/:id', (req, res) => {
 	// find a single product by its `id`
 	// be sure to include its associated Category and Tag data
-	Product.findOne({where: {
-		id: req.params.id
-	}}).then(response => {
+	Product.findOne({
+		where: {
+			id: req.params.id
+		}
+	}).then(response => {
 		res.json(response);
 	})
 });
@@ -30,8 +32,16 @@ router.post('/', (req, res) => {
 		tagIds: [1, 2, 3, 4]
 	  }
 	*/
-	Product.create(req.body)
+	console.log(req.body);
+	Product.create({
+		/*product_name: req.body.product_name,
+		price: req.body.price,
+		stock: req.body.stock,
+		category_id: req.body.category_id,
+		tagIds: req.body.tagIds*/
+	})
 		.then((product) => {
+			console.log("made it");
 			// if there's product tags, we need to create pairings to bulk create in the ProductTag model
 			if (req.body.tagIds.length) {
 				const productTagIdArr = req.body.tagIds.map((tag_id) => {
@@ -40,13 +50,16 @@ router.post('/', (req, res) => {
 						tag_id,
 					};
 				});
-				return ProductTag.bulkCreate(productTagIdArr);
+				return ProductTag.bulkCreate(productTagIdArr)
+					.then((productTagIds) => res.status(200).json(productTagIds))
+					.catch((err) => {
+						console.log(err);
+						res.status(400).json(err);
+					})
 			}
 			// if no product tags, just respond
 			res.status(200).json(product);
-		})
-		.then((productTagIds) => res.status(200).json(productTagIds))
-		.catch((err) => {
+		}).catch((err) => {
 			console.log(err);
 			res.status(400).json(err);
 		});
@@ -95,9 +108,11 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-	Product.destroy({where: {
-		id: req.params.id
-	}}).then(response => {
+	Product.destroy({
+		where: {
+			id: req.params.id
+		}
+	}).then(response => {
 		res.json(response);
 	})
 });
